@@ -1,0 +1,20 @@
+all cases : 100, passed cases : 100
+overall running time: 592  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 597  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 593  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 592  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 590  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 591  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 593  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 591  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 595  milliseconds
+all cases : 100, passed cases : 100
+overall running time: 591  milliseconds
