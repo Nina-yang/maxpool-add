@@ -33,6 +33,7 @@ void get_idx(const size_t& idx_dst, size_t& idx_a, size_t& idx_b, const Stride& 
     tmp %= str_dst.stride_H;
     j_dst = tmp;
     
+    
     p_srca = str_a.B == 1? 0: p_dst;
     k_srca = str_a.C == 1? 0: k_dst;
     i_srca = str_a.H == 1? 0: i_dst;
@@ -60,26 +61,18 @@ void fused_add_array(T* p_a, T*p_b, T* res, size_t size, Stride& str_dst,  Strid
     size_t idx_dst ;
     size_t idx_a, idx_b;
 
-    // std::cout << "a: " << str_a.B << ", " << str_a.C << ", " << str_a.H << ", " << str_a.W << std::endl;
-    // std::cout << "b: " << str_b.B << ", " << str_b.C << ", " << str_b.H << ", " << str_b.W << std::endl;
-    // std::cout << "res: " << str_dst.B << ", " << str_dst.C << ", " << str_dst.H << ", " << str_dst.W << std::endl;
-    // std::cout << std::endl << std::endl << std::endl;
-
     #ifdef USE_OMP
     #pragma omp parallel shared(p_a, p_b, res) private(idx_dst, idx_a, idx_b) num_threads(4)
     {
         #pragma omp for schedule(static)
     #endif
     for(idx_dst = 0; idx_dst < size; ++idx_dst) {
-        // get_idx(idx_dst, idx_a, idx_b, str_dst, str_a, str_b);
-        idx_a = str_a.B==str_b.B && str_a.C==str_b.C && str_a.H==str_b.H && str_a.W==str_b.W ? idx_dst: 0;
-        idx_b = str_a.B==str_b.B && str_a.C==str_b.C && str_a.H==str_b.H && str_a.W==str_b.W ? idx_dst: 0;
-        // res[idx_dst] = p_a[idx_a] + p_b[idx_b];
+        get_idx(idx_dst, idx_a, idx_b, str_dst, str_a, str_b);
+        res[idx_dst] = p_a[idx_a] + p_b[idx_b];
     }
     #ifdef USE_OMP
     }
     #endif
-
 }
 
 template<typename T>
@@ -98,7 +91,7 @@ Tensor<T> fused_add(Tensor<T>& a, Tensor<T>& b) {
     Stride str_a = a.stride();
     Stride str_b = b.stride();
     
-    // fused_add_array(a.p, b.p, res.p, res.size(), str_res, str_a, str_b);
+    fused_add_array(a.p, b.p, res.p, res.size(), str_res, str_a, str_b);
     
     return res;
 }

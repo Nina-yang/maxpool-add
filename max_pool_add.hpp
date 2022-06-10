@@ -15,6 +15,7 @@
 #include <fstream>
 #include "utils.hpp"
 #include "tensor.hpp"
+#include "fused_op.hpp"
 
 int th_num = 5;
 
@@ -416,7 +417,11 @@ Tensor<T> add(Tensor<T>& a, Tensor<T>& b) {
 template<typename T>
 Tensor<T> max_pool_add(Tensor<T>& a, Tensor<T>& b) {
     Tensor<T> a_max_pool = max_pool(a);
+    #ifdef USE_OP_FUSION
+    Tensor<T> res = fused_add(a_max_pool, b);
+    #else
     Tensor<T> res = add(a_max_pool, b);
+    #endif
     return res;
 }
 

@@ -21,9 +21,9 @@ IF(USE_OP_FUSION)
     ADD_DEFINITIONS(-DUSE_OP_FUSION)
 ENDIF(USE_OP_FUSION)
 
-add_executable(mpa_fusion main.cpp utils.cpp)
+add_executable(mpa_baseline main.cpp utils.cpp)
 
-target_include_directories(mpa_fusion
+target_include_directories(mpa_baseline
     PUBLIC {PROJECT_SOURCE_DIR}
 )
 

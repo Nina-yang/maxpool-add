@@ -26,13 +26,13 @@ def generate_one_case(broadcase_p, data_type, tensor_size, large_batch=False):
     b_w = (a_w + 1) // 2
     
     #for triggering broadcast 
-    if not large_batch and random.random() < broadcase_p: a_b = 1 
-    if not large_batch and random.random() < broadcase_p: a_c = 1
+#     if not large_batch and random.random() < broadcase_p: a_b = 1 
+#     if not large_batch and random.random() < broadcase_p: a_c = 1
     
-    if random.random() < broadcase_p: b_b = 1
-    if random.random() < broadcase_p: b_c = 1
-    if random.random() < broadcase_p: b_h = 1
-    if random.random() < broadcase_p: b_w = 1
+#     if random.random() < broadcase_p: b_b = 1
+#     if random.random() < broadcase_p: b_c = 1
+#     if random.random() < broadcase_p: b_h = 1
+#     if random.random() < broadcase_p: b_w = 1
     
          
     if data_type == "int32":
