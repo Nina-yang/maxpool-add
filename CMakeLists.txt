@@ -17,10 +17,19 @@ IF(USE_AVX)
     ADD_DEFINITIONS(-DUSE_AVX)
 ENDIF(USE_AVX)
 
+IF(USE_OP_FUSION)
+    ADD_DEFINITIONS(-DUSE_OP_FUSION)
+ENDIF(USE_OP_FUSION)
+
+add_executable(mpa_fusion main.cpp utils.cpp)
+
+target_include_directories(mpa_fusion
+    PUBLIC {PROJECT_SOURCE_DIR}
+)
 
 set (CMAKE_CXX_FLAGS "-fopenmp -mavx2")
 
-
+#[[
 IF(USE_OMP AND USE_AVX)
     add_executable(mpa_omp_avx main.cpp utils.cpp)
 
@@ -60,3 +69,4 @@ IF(USE_BATCHOMP)
         PUBLIC {PROJECT_SOURCE_DIR}
     )
 ENDIF(USE_BATCHOMP)
+]]

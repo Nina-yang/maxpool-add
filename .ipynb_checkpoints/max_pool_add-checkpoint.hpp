@@ -14,119 +14,9 @@
 #include <algorithm>
 #include <fstream>
 #include "utils.hpp"
+#include "tensor.hpp"
 
 int th_num = 5;
-
-struct Stride {
-    size_t stride_B;
-    size_t stride_C;
-    size_t stride_H;
-    size_t stride_W;
-
-};
-
-template<typename T>
-T* read_data_from_file(const char * path, T* shape);
-
-template<typename T>
-struct Tensor {
-    static_assert(std::is_same<T, float>::value 
-    || std::is_same<T, double>::value 
-    || std::is_same<T, int>::value 
-    , "Tensor value types are restricted to double, float or int!");
-
-    /**
-     * @brief Default constructor, create a tensor that is not valid / initialized
-     * 
-     */
-    Tensor() { }
-
-    Tensor(size_t B, size_t C, size_t H, size_t W) : 
-    B(B), C(C), H(H), W(W) {
-         p = (T*)malloc(sizeof(T) * B * C * H * W);
-    }
-
-    /**
-     * @brief Construct a new Tensor object by deserializing data from file
-     * 
-     * @param path: path of file from which to deserialize
-     */
-    Tensor(const char* path) { 
-        T shape[4];
-        p = read_data_from_file(path, shape);
-        B = shape[0];
-        C = shape[1];
-        H = shape[2];
-        W = shape[3];
-    }
-
-
-    Tensor(const Tensor<T>& t) { // copy constructor
-        B = t.B;
-        C = t.C;
-        H = t.H;
-        W = t.W;
-        size_t size = t.size();
-        T* p = (T*) malloc(sizeof(T) * size);
-        memcpy(p, t.p, sizeof(T) * size);
-    }
-
-    Tensor(Tensor<T> && t) { // move constructor
-        B = t.B;
-        C = t.C;
-        H = t.H;
-        W = t.W;
-        if (p) delete[] p;
-        p = t.p;
-        t.p = nullptr;
-    }
-
-    ~Tensor() {
-        if (p) {
-            free(p);
-        }
-    }
-
-    bool operator == (const Tensor<T>& t) const {
-        if (B != t.B) return false;
-        if (C != t.C) return false;
-        if (H != t.H) return false;
-        if (W != t.W) return false;
-        size_t size = this->size();
-        for (size_t i = 0; i < size; ++i) {
-            if (p[i] != t.p[i]) 
-                return false;
-        }  
-        return true;
-
-    }
-
-    size_t size() const{
-        return B * C * H * W;
-    }
-
-    Stride stride() const {
-        return Stride{C*H*W, H*W, W, 1};
-    }
-
-    void print_elems() const {
-        size_t size = this->size();
-        for( size_t i = 0; i < size; ++i) {
-            std::cout << p[i] << std::endl;
-        }
-    }
-
-    bool is_valid() const {
-        return p != nullptr;
-    }
-
-    size_t B;
-    size_t C;
-    size_t H;
-    size_t W;
-    T* p = nullptr;
-};
-
 
 template<typename T> 
 void add_array(T* p_a, T*p_b, T* res, size_t size) {
@@ -270,6 +160,111 @@ void max_pool_2D(T* src, T* dst, size_t src_H, size_t src_W, size_t dst_H, size_
 }
 
 template<typename T>
+void fused_pad_max_pool_2D(T* src, T* dst, size_t src_H, size_t src_W, size_t dst_H, size_t dst_W) {
+    T max_elem;
+    size_t i,j,k_i,k_j;
+    size_t idw_first_padded = 2, idh_first_padded=2;
+    size_t idw_last_padded = 2 * ((src_W-1)/2);
+    size_t idh_last_padded = 2 * ((src_H-1)/2);
+    size_t padded_H = src_H + 2;
+    size_t padded_W = src_W + 2;
+    
+    // std::cout << "Shape: srcH=" << src_H << ",srcW=" << src_W << std::endl;
+    // std::cout << "idh_last_padded=" << idh_last_padded << std::endl;
+    // std::cout << "idw_last_padded=" << idw_last_padded << std::endl;
+    // std::cout << "dst_H=" << dst_H << ",dst_W" << dst_W << std::endl;
+    // std::cout << std::endl << std::endl << std::endl;
+    
+    #ifdef USE_OMP
+    #pragma omp parallel private(i,j,k_i,k_j,max_elem) num_threads(th_num)
+    {
+        #pragma omp for schedule(static)
+    #endif
+        for(i = idh_first_padded; i < idh_last_padded;  i += 2) {
+            for (j = idw_first_padded; j < idw_last_padded; j += 2) {
+                max_elem = src[(i-1) * src_W + (j-1)];
+                for(k_i  = 0; k_i < 3; ++k_i) {
+                    for(k_j = 0; k_j < 3; ++ k_j) {
+                        if (max_elem < src[(i - 1 + k_i) * src_W + j -1 + k_j]) {
+                            max_elem = src[(i - 1 + k_i) * src_W + j -1 + k_j];
+                        }
+                    }
+                }
+                dst[(i/2) * dst_W + j/2] = max_elem;
+            }
+        } 
+    #ifdef USE_OMP
+    }   
+    #endif
+    
+    // upper slot
+    for(i=0; i<idh_first_padded; i+=2){
+        for(j=0;j<padded_W-2; j+=2){
+            max_elem = 0;
+            // max_elem = src[i * src_W + j];
+            for(k_i  = 0; k_i < 3; ++k_i) {
+                for(k_j = 0; k_j < 3; ++ k_j) {
+                    if(i-1+k_i < 0 || j - 1 + k_j < 0 || i-1+k_i >= src_H || j - 1 + k_j >= src_W) continue;
+                    if (max_elem < src[(i-1 + k_i) * src_W + j - 1 + k_j]) {
+                        max_elem = src[(i-1 + k_i) * src_W + j - 1 + k_j];
+                    }
+                }
+            }
+            dst[(i/2) * dst_W + j/2] = max_elem;
+        }
+    }
+    
+    // lower slot
+    for(i=idh_last_padded; i<padded_H-2; i+=2){
+        for(j=0;j<padded_W-2; j+=2){
+            max_elem = 0;
+            for(k_i  = 0; k_i < 3; ++k_i) {
+                for(k_j = 0; k_j < 3; ++ k_j) {
+                    if(i-1+k_i < 0 || j - 1 + k_j < 0 || i-1+k_i >= src_H || j - 1 + k_j >= src_W) continue;
+                    if (max_elem < src[(i-1 + k_i) * src_W + j - 1 + k_j]) {
+                        max_elem = src[(i-1 + k_i) * src_W + j - 1 + k_j];
+                    }
+                }
+            }
+            dst[(i/2) * dst_W + j/2] = max_elem;
+        }
+    }
+    
+    // left slot
+    for(i=0; i<padded_H-2; i+=2){
+        for(j=0;j<idw_first_padded; j+=2){
+            max_elem = 0;
+            for(k_i  = 0; k_i < 3; ++k_i) {
+                for(k_j = 0; k_j < 3; ++ k_j) {
+                    if(i-1+k_i < 0 || j - 1 + k_j < 0 || i-1+k_i >= src_H || j - 1 + k_j >= src_W) continue;
+                    if (max_elem < src[(i-1 + k_i) * src_W + j - 1 + k_j]) {
+                        max_elem = src[(i-1 + k_i) * src_W + j - 1 + k_j];
+                    }
+                }
+            }
+            dst[(i/2) * dst_W + j/2] = max_elem;
+        }
+    }
+    
+    // right slot
+    for(i=0; i<padded_H-2; i+=2){
+        for(j=idw_last_padded;j<padded_W-2; j+=2){
+            max_elem = 0;
+            for(k_i  = 0; k_i < 3; ++k_i) {
+                for(k_j = 0; k_j < 3; ++ k_j) {
+                    if(i-1+k_i < 0 || j - 1 + k_j < 0 || i-1+k_i >= src_H || j - 1 + k_j >= src_W) continue;
+                    if (max_elem < src[(i-1 + k_i) * src_W + j - 1 + k_j]) {
+                        max_elem = src[(i-1 + k_i) * src_W + j - 1 + k_j];
+                    }
+                }
+            }
+            dst[(i/2) * dst_W + j/2] = max_elem;
+        }
+    }
+
+}
+
+template<typename T>
 Tensor<T> max_pool(Tensor<T>& src) {
     // pre-allocated memory for holding all the following padded 2-D matrix.
     // all the elements are initialized as 0 to save the “0 assignment" in default padding.
@@ -299,9 +294,15 @@ Tensor<T> max_pool(Tensor<T>& src) {
     
     for (b_i = 0 ; b_i < dst.B; ++b_i) {
         for(c_i = 0; c_i < dst.C; ++c_i) {
+            #ifdef USE_OP_FUSION
+            fused_pad_max_pool_2D(src.p + b_i * src_str.stride_B + c_i * src_str.stride_C, 
+                                  dst.p + b_i * dst_str.stride_B + c_i * dst_str.stride_C, 
+                                  src.H, src.W, dst_H, dst_W);
+            #else
             current_padding = padding + b_i * stride_B + c_i * stride_C;
             padding_2D(src.p + b_i * src_str.stride_B + c_i * src_str.stride_C, current_padding, src.H, src.W); 
             max_pool_2D(current_padding, dst.p + b_i * dst_str.stride_B + c_i * dst_str.stride_C, src.H + 2, src.W + 2, dst_H, dst_W);
+            #endif
         }
     }
         
@@ -427,18 +428,6 @@ void helper_fill_sequence(Tensor<T> & tensor) {
         tensor.p[i] = cnt;
         cnt += 1;
     }
-}
-
-template<typename T>
-T* read_data_from_file(const char * path, T* shape) {
-    std::ifstream input;
-    input.open(path, std::ios::in | std::ios::binary);
-    input.read((char*)shape, 4 * sizeof(T));
-    size_t size =(size_t)shape[0] * (size_t)shape[1] * (size_t)shape[2] *(size_t) shape[3]; // cast to size_t to avoid overflow
-    T * arr = (T *)malloc(size * sizeof(T));
-    input.read((char*)arr, size * sizeof(T));
-    input.close();
-    return arr;
 }
 
 
