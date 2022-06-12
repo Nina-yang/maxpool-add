@@ -435,5 +435,5 @@ void helper_fill_sequence(Tensor<T> & tensor) {
     }
 }
 
-
+//
 #endif // MAX_POOL_ADD_H
