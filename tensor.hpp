@@ -49,7 +49,7 @@ struct Tensor {
          p = (T*)malloc(sizeof(T) * B * C * H * W);
     }
 
-    /**
+    /***
      * @brief Construct a new Tensor object by deserializing data from file
      * 
      * @param path: path of file from which to deserialize
