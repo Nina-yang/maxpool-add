@@ -48,7 +48,7 @@ void get_idx(const size_t& idx_dst, size_t& idx_a, size_t& idx_b, const Stride& 
     
 //     assert(idx_a<str_a.B*str_a.C*str_a.H*str_a.W);
 //     assert(idx_b<str_b.B*str_b.C*str_b.H*str_b.W);
-    
+//    
 //     if(str_b.B != str_a.B || str_b.C != str_a.C){
 //         std::cout << "idx_a: " << idx_a << ", " << str_a.B*str_a.C*str_a.H*str_a.W << std::endl;
 //         std::cout << "idx_b: " << idx_b << ", " << str_b.B*str_b.C*str_b.H*str_b.W << std::endl;
