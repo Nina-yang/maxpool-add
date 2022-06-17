@@ -11,14 +11,20 @@ import argparse
 
 
 def generate_one_case(broadcase_p, data_type, tensor_size, large_batch=False):
-    a_b = random.randint(tensor_size['C'][0], tensor_size['C'][1])
-    a_c = random.randint(tensor_size['B'][0], tensor_size['B'][1])
-    a_h = random.randint(tensor_size['H'][0], tensor_size['H'][1])
-    a_w = random.randint(tensor_size['W'][0], tensor_size['W'][1])
+#     a_b = random.randint(tensor_size['C'][0], tensor_size['C'][1])
+#     a_c = random.randint(tensor_size['B'][0], tensor_size['B'][1])
+#     a_h = random.randint(tensor_size['H'][0], tensor_size['H'][1])
+#     a_w = random.randint(tensor_size['W'][0], tensor_size['W'][1])
     
-    if large_batch:
-        a_b = 128
-        a_c = 128
+#     if large_batch:
+#         a_b = 128
+#         a_c = 128
+
+    a_b = 16
+    a_c = 8
+    a_h = 63
+    a_w = 63
+    
 
     b_b = a_b
     b_c = a_c
@@ -29,10 +35,10 @@ def generate_one_case(broadcase_p, data_type, tensor_size, large_batch=False):
 #     if not large_batch and random.random() < broadcase_p: a_b = 1 
 #     if not large_batch and random.random() < broadcase_p: a_c = 1
     
-#     if random.random() < broadcase_p: b_b = 1
-#     if random.random() < broadcase_p: b_c = 1
-#     if random.random() < broadcase_p: b_h = 1
-#     if random.random() < broadcase_p: b_w = 1
+    if random.random() < broadcase_p: b_b = 1
+    if random.random() < broadcase_p: b_c = 1
+    if random.random() < broadcase_p: b_h = 1
+    if random.random() < broadcase_p: b_w = 1
     
          
     if data_type == "int32":
@@ -81,10 +87,11 @@ if __name__ == "__main__":
         'mid'  : { "C": [ 4,  8], "B": [ 4,  8], "H": [200, 400], "W":[200, 400]},
         'large': { "C": [ 8, 16], "B": [ 8, 16], "H": [400, 800], "W":[400, 800]},
         'large_batch': { "C": [ 128, 256], "B": [ 32, 64], "H": [64,65], "W":[64,65]}, 
+        'single_size': { "C": [ 128, 256], "B": [ 32, 64], "H": [64,65], "W":[64,65]},
     }
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s','--tensor_size', choices = ['small', 'mid', 'large', 'large_batch'], default= 'large', help = 'Operated tensor size')
+    parser.add_argument('-s','--tensor_size', choices = ['small', 'mid', 'large', 'large_batch', 'single_size'], default= 'large', help = 'Operated tensor size')
     parser.add_argument('-o','--out_directory', type = str, default='./test_case', help='Directory to save test cases')
     parser.add_argument('-n','--case_nums', type = int, default = 100, help='Number of test cases')
     parser.add_argument('-p','--broadcast_probality', type = float, default= 0.1,help = 'Probability of performing broadcast')

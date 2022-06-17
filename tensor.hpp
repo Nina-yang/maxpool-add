@@ -32,6 +32,9 @@ template<typename T>
 T* read_data_from_file(const char * path, T* shape);
 
 template<typename T>
+T* read_data_from_file(const char * path, T* shape, T* p);
+
+template<typename T>
 struct Tensor {
     static_assert(std::is_same<T, float>::value 
     || std::is_same<T, double>::value 
@@ -57,6 +60,15 @@ struct Tensor {
     Tensor(const char* path) { 
         T shape[4];
         p = read_data_from_file(path, shape);
+        B = shape[0];
+        C = shape[1];
+        H = shape[2];
+        W = shape[3];
+    }
+    
+    Tensor(const char* path, T* p) { 
+        T shape[4];
+        p = read_data_from_file(path, shape, p);
         B = shape[0];
         C = shape[1];
         H = shape[2];
@@ -140,6 +152,18 @@ T* read_data_from_file(const char * path, T* shape) {
     input.read((char*)arr, size * sizeof(T));
     input.close();
     return arr;
+}
+
+template<typename T>
+T* read_data_from_file(const char * path, T* shape, T* p) {
+    std::ifstream input;
+    input.open(path, std::ios::in | std::ios::binary);
+    input.read((char*)shape, 4 * sizeof(T));
+    size_t size =(size_t)shape[0] * (size_t)shape[1] * (size_t)shape[2] *(size_t) shape[3]; // cast to size_t to avoid overflow
+
+    input.read((char*)p, size * sizeof(T));
+    input.close();
+    return p;
 }
 
 #endif

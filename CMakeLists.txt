@@ -5,6 +5,8 @@ OPTION(USE_OMP "Use OpenMP" OFF)
 OPTION(USE_AVX "Use AVX" OFF)
 OPTION(USE_BATCHOMP "Use batch omp" OFF)
 
+
+#[[
 IF(USE_BATCHOMP)
     ADD_DEFINITIONS(-DUSE_BATCHOMP)
 ENDIF(USE_BATCHOMP)
@@ -20,10 +22,11 @@ ENDIF(USE_AVX)
 IF(USE_OP_FUSION)
     ADD_DEFINITIONS(-DUSE_OP_FUSION)
 ENDIF(USE_OP_FUSION)
+]]
 
-add_executable(mpa_baseline main.cpp utils.cpp)
+add_executable(mpa_fusion main.cpp utils.cpp)
 
-target_include_directories(mpa_baseline
+target_include_directories(mpa_fusion
     PUBLIC {PROJECT_SOURCE_DIR}
 )
 

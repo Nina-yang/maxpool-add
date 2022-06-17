@@ -12,13 +12,24 @@ using hclock = std::chrono::high_resolution_clock;
 template<typename T>
 bool test_from_torch(const char* path_a, 
 const char* path_b, const char* path_c, int case_index, 
-std::string& data_type,  milliseconds& overall_time, bool verbose=false) {
-
-    Tensor<T> a(path_a); // construct tensor from file
-    Tensor<T> b(path_b); // construct tensor from file
-    Tensor<T> c(path_c); // construct tensor from file
+std::string& data_type,  milliseconds& overall_time,
+                     T* p_a=NULL, T* p_b=NULL, T* p_c=NULL,
+                     bool verbose=false,
+                     shared_memory=true) {
+    
+    if(shared_memory){
+        Tensor<T> a(path_a, p_a); // construct tensor from file
+        Tensor<T> b(path_b, p_b); // construct tensor from file
+        Tensor<T> c(path_c, p_c); // construct tensor from file
+    }
+    else{
+        Tensor<T> a(path_a); // construct tensor from file
+        Tensor<T> b(path_b); // construct tensor from file
+        Tensor<T> c(path_c); // construct tensor from file
+    }
 
     auto t_start = hclock::now(); 
+    // Tensor<T> res  = max_pool_add(a, b);
     Tensor<T> res  = max_pool_add(a, b);
     auto t_end = hclock::now();
     overall_time += std::chrono::duration_cast< milliseconds>(t_end - t_start ); 
@@ -72,13 +83,21 @@ void test_from_torch(const char * folder_path, bool verbose=false) {
 
         std::string path_res = path_prefix +
         std::to_string(i) + "_" + data_type + std::string("_c.bin"); // path of tensor c
+        
+        size_t size_a = 16*8*63*63;
+        size_t size_b = 16*8*32*32;
+        size_t size_c = 16*8*32*32;
+        void * p_a = malloc(size_a * sizeof(double));
+        void * p_b = malloc(size_b * sizeof(double));
+        void * p_c = malloc(size_c * sizeof(double));
+        void * p_res = malloc(size_c * sizeof(double));
 
         if (data_type == "int32") {
-            is_pass = test_from_torch<int>(path_a.c_str(), path_b.c_str(), path_res.c_str(),i, data_type, overall_time,verbose);
+            is_pass = test_from_torch<int>(path_a.c_str(), path_b.c_str(), path_res.c_str(),i, data_type, overall_time,(int*)p_a, (int*)p_b, (int*)p_c,verbose);
         } else if (data_type == "float32"){
-            is_pass = test_from_torch<float>(path_a.c_str(), path_b.c_str(), path_res.c_str(),i, data_type, overall_time,verbose);
+            is_pass = test_from_torch<float>(path_a.c_str(), path_b.c_str(), path_res.c_str(),i, data_type, overall_time,(float*)p_a, (float*)p_b, (float*)p_c,verbose);
         } else if (data_type == "double"){
-            is_pass = test_from_torch<double>(path_a.c_str(), path_b.c_str(), path_res.c_str(),i, data_type, overall_time,verbose);
+            is_pass = test_from_torch<double>(path_a.c_str(), path_b.c_str(), path_res.c_str(),i, data_type, overall_time,(double*)p_a, (double*)p_b, (double*)p_c,verbose);
         } else {
             std::cerr << "Not supported data type" << std::endl;
             abort();

@@ -16,8 +16,9 @@
 #include "utils.hpp"
 #include "tensor.hpp"
 #include "fused_op.hpp"
+#include "fused_graph.hpp"
 
-int th_num = 5;
+int th_num = 4;
 
 template<typename T> 
 void add_array(T* p_a, T*p_b, T* res, size_t size) {
@@ -176,11 +177,11 @@ void fused_pad_max_pool_2D(T* src, T* dst, size_t src_H, size_t src_W, size_t ds
     // std::cout << "dst_H=" << dst_H << ",dst_W" << dst_W << std::endl;
     // std::cout << std::endl << std::endl << std::endl;
     
-    #ifdef USE_OMP
-    #pragma omp parallel private(i,j,k_i,k_j,max_elem) num_threads(th_num)
-    {
-        #pragma omp for schedule(static)
-    #endif
+    // #ifdef USE_OMP
+    // #pragma omp parallel private(i,j,k_i,k_j,max_elem) num_threads(th_num)
+    // {
+    //     #pragma omp for schedule(static)
+    // #endif
         for(i = idh_first_padded; i < idh_last_padded;  i += 2) {
             for (j = idw_first_padded; j < idw_last_padded; j += 2) {
                 max_elem = src[(i-1) * src_W + (j-1)];
@@ -194,9 +195,9 @@ void fused_pad_max_pool_2D(T* src, T* dst, size_t src_H, size_t src_W, size_t ds
                 dst[(i/2) * dst_W + j/2] = max_elem;
             }
         } 
-    #ifdef USE_OMP
-    }   
-    #endif
+    // #ifdef USE_OMP
+    // }   
+    // #endif
     
     // upper slot
     for(i=0; i<idh_first_padded; i+=2){
@@ -422,6 +423,7 @@ Tensor<T> max_pool_add(Tensor<T>& a, Tensor<T>& b) {
     #else
     Tensor<T> res = add(a_max_pool, b);
     #endif
+    
     return res;
 }
 
