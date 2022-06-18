@@ -19,7 +19,14 @@
 
 
 template<typename T>
-Tensor<T> fused_graph(Tensor<T>& srca, Tensor<T>& srcb, Tensor<T>& dst,
+void fused_max_pool_add_2D(T* src, T* src_b, T* dst, 
+                           size_t src_H, size_t src_W,
+                           size_t dst_H, size_t dst_W, 
+                           size_t flag_h, size_t flag_w);
+
+
+template<typename T>
+void fused_graph(Tensor<T>& srca, Tensor<T>& srcb, Tensor<T>& dst,
                      size_t flag_b, size_t flag_c, size_t flag_h, size_t flag_w) {
 
     size_t dst_H =  (srca.H + 1) / 2;
@@ -31,15 +38,12 @@ Tensor<T> fused_graph(Tensor<T>& srca, Tensor<T>& srcb, Tensor<T>& dst,
 
     size_t b_i, c_i;
     
-    #ifdef USE_BATCHOMP
     #pragma omp parallel shared(srca, srcb, dst) private(b_i,c_i) num_threads(4)
     {
         #pragma omp for schedule(static)
-    #endif
     
     for (b_i = 0 ; b_i < dst.B; ++b_i) {
         for(c_i = 0; c_i < dst.C; ++c_i) {
-            #ifdef USE_OP_FUSION
             fused_max_pool_add_2D(srca.p + b_i * srca_str.stride_B + c_i * srca_str.stride_C, 
                                   srcb.p + b_i * srcb_str.stride_B * flag_b + c_i * srcb_str.stride_C * flag_c,
                                   dst.p + b_i * dst_str.stride_B + c_i * dst_str.stride_C, 
@@ -48,13 +52,8 @@ Tensor<T> fused_graph(Tensor<T>& srca, Tensor<T>& srcb, Tensor<T>& dst,
         }
     }
         
-    #ifdef USE_BATCHOMP
     }
-    #endif
-
-    free(padding);
-
-    return dst;
+    
 }
 
 
@@ -77,7 +76,8 @@ void fused_max_pool_add_2D(T* src, T* src_b, T* dst,
             max_elem = src[(i-1) * src_W + (j-1)];
             for(k_i  = 0; k_i < 3; ++k_i) {
                 for(k_j = 0; k_j < 3; ++ k_j) {
-                	if(k_i == 0 && k_j ==0)	continue;
+                    if(k_i == 0 && k_j ==0)
+                        continue;
                     if (max_elem < src[(i - 1 + k_i) * src_W + j -1 + k_j]) {
                         max_elem = src[(i - 1 + k_i) * src_W + j -1 + k_j];
                     }

@@ -67,11 +67,22 @@ def generate_cases(test_case_dir, case_nums, tensor_size, broadcase_p,large_batc
         data_type = random.sample(data_type_list, k =1)[0]
         a, b = generate_one_case(broadcase_p, data_type, tensor_size,large_batch)
         c = (maxpool(a)) + b 
+        
+        # print("a: ", a.shape)
+        # print("b: ", b.shape)
+        # print("c: ", c.shape)
 
         # append meta info, i.e, shape to the start of the tensor
         a = torch.cat((torch.tensor(a.shape),  a.flatten()), dim = 0)
         b = torch.cat((torch.tensor(b.shape),  b.flatten()), dim = 0)
         c = torch.cat((torch.tensor(c.shape),  c.flatten()), dim = 0)
+
+        # print('-'*10)
+        # print("a: ", a.shape)
+        # print("b: ", b.shape)
+        # print("c: ", c.shape)
+        # print()
+        # print()
         
         ## serialize a, b, c to binary files
         a.numpy().astype(data_type).tofile('./{}/case_{}_{}_a.bin'.format(test_case_dir,i,data_type))

@@ -24,9 +24,9 @@ IF(USE_OP_FUSION)
 ENDIF(USE_OP_FUSION)
 ]]
 
-add_executable(mpa_fusion main.cpp utils.cpp)
+add_executable(mpa_share_memory main.cpp utils.cpp)
 
-target_include_directories(mpa_fusion
+target_include_directories(mpa_share_memory
     PUBLIC {PROJECT_SOURCE_DIR}
 )
 

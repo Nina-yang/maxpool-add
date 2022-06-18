@@ -51,6 +51,14 @@ struct Tensor {
     B(B), C(C), H(H), W(W) {
          p = (T*)malloc(sizeof(T) * B * C * H * W);
     }
+    
+    Tensor(size_t B, size_t C, size_t H, size_t W, T* p){
+        this->B = B;
+        this->C = C;
+        this->H = H;
+        this->W = W;
+        this->p = p;
+    }
 
     /***
      * @brief Construct a new Tensor object by deserializing data from file
@@ -68,7 +76,7 @@ struct Tensor {
     
     Tensor(const char* path, T* p) { 
         T shape[4];
-        p = read_data_from_file(path, shape, p);
+        this->p = read_data_from_file(path, shape, p);
         B = shape[0];
         C = shape[1];
         H = shape[2];
@@ -97,9 +105,9 @@ struct Tensor {
     }
 
     ~Tensor() {
-        if (p) {
-            free(p);
-        }
+        // if (p) {
+        //     free(p);
+        // }
     }
 
     bool operator == (const Tensor<T>& t) const {
@@ -107,6 +115,7 @@ struct Tensor {
         if (C != t.C) return false;
         if (H != t.H) return false;
         if (W != t.W) return false;
+                
         size_t size = this->size();
         for (size_t i = 0; i < size; ++i) {
             if (p[i] != t.p[i]) 
@@ -159,8 +168,11 @@ T* read_data_from_file(const char * path, T* shape, T* p) {
     std::ifstream input;
     input.open(path, std::ios::in | std::ios::binary);
     input.read((char*)shape, 4 * sizeof(T));
+    // std::cout << "hello-1" << std::endl;
     size_t size =(size_t)shape[0] * (size_t)shape[1] * (size_t)shape[2] *(size_t) shape[3]; // cast to size_t to avoid overflow
-
+    
+    // std::cout << "helloooo: " << shape[0] << ", ";
+    // std::cout << shape[1] << ", " << shape[2] << ", " <<shape[3] << std::endl;
     input.read((char*)p, size * sizeof(T));
     input.close();
     return p;

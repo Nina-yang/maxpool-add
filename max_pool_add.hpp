@@ -16,7 +16,6 @@
 #include "utils.hpp"
 #include "tensor.hpp"
 #include "fused_op.hpp"
-#include "fused_graph.hpp"
 
 int th_num = 4;
 
